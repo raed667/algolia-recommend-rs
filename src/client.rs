@@ -5,10 +5,12 @@ use crate::models::{
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 const DEFAULT_SCHEME: &str = "https";
-const DEFAULT_HOST_SUFFIX: &str = ".algolia.net";
 const RECOMMEND_PATH: &str = "/1/indexes/*/recommendations";
+const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 #[derive(Clone, Debug)]
 pub struct RecommendClient {
@@ -16,14 +18,16 @@ pub struct RecommendClient {
     api_key: String,
     http: Client,
     base_url: String,
+    hosts: Vec<String>,
+    host_cursor: Arc<AtomicUsize>,
     default_object_id: Option<String>,
 }
 
 impl RecommendClient {
     pub fn new(app_id: impl Into<String>, api_key: impl Into<String>) -> Self {
         let app_id_str = app_id.into();
-        let base_url = format!("{DEFAULT_SCHEME}://{app_id_str}{DEFAULT_HOST_SUFFIX}");
-        Self::with_base_url(app_id_str, api_key, base_url)
+        let hosts = get_default_hosts(&app_id_str);
+        Self::with_hosts(app_id_str, api_key, hosts)
     }
 
     pub fn with_custom_host(
@@ -34,7 +38,7 @@ impl RecommendClient {
         let app_id_str = app_id.into();
         let host_str: String = host.into();
         let base_url = format!("{DEFAULT_SCHEME}://{host_str}");
-        Self::with_base_url(app_id_str, api_key, base_url)
+        Self::with_hosts(app_id_str, api_key, vec![base_url])
     }
 
     pub fn with_base_url(
@@ -43,14 +47,41 @@ impl RecommendClient {
         base_url: impl Into<String>,
     ) -> Self {
         let http = Client::builder()
-            .user_agent("algolia-recommend-rs/0.1")
+            .user_agent(USER_AGENT)
             .build()
             .expect("failed to build reqwest client");
+        let base = base_url.into();
         Self {
             app_id: app_id.into(),
             api_key: api_key.into(),
             http,
-            base_url: base_url.into(),
+            base_url: base.clone(),
+            hosts: vec![base],
+            host_cursor: Arc::new(AtomicUsize::new(0)),
+            default_object_id: None,
+        }
+    }
+
+    pub fn with_hosts(
+        app_id: impl Into<String>,
+        api_key: impl Into<String>,
+        hosts: Vec<String>,
+    ) -> Self {
+        let http = Client::builder()
+            .user_agent(USER_AGENT)
+            .build()
+            .expect("failed to build reqwest client");
+        let base_url = hosts
+            .first()
+            .cloned()
+            .unwrap_or_else(|| String::from("https://"));
+        Self {
+            app_id: app_id.into(),
+            api_key: api_key.into(),
+            http,
+            base_url,
+            hosts,
+            host_cursor: Arc::new(AtomicUsize::new(0)),
             default_object_id: None,
         }
     }
@@ -79,37 +110,81 @@ impl RecommendClient {
         headers
     }
 
-    fn endpoint(&self) -> String {
-        format!("{base}{path}", base = self.base_url, path = RECOMMEND_PATH)
-    }
-
     async fn post_json<B: Serialize, R: serde::de::DeserializeOwned>(&self, body: &B) -> Result<R> {
-        let res = self
-            .http
-            .post(self.endpoint())
-            .headers(self.headers())
-            .json(body)
-            .send()
-            .await?;
+        // Start from a rotating cursor to distribute load across hosts
+        let total_hosts = self.hosts.len();
+        let start = if total_hosts == 0 {
+            0
+        } else {
+            self.host_cursor.fetch_add(1, Ordering::Relaxed) % total_hosts
+        };
 
-        let status = res.status();
-        let text = res.text().await?;
-        if !status.is_success() {
-            let message = serde_json::from_str::<serde_json::Value>(&text)
-                .ok()
-                .and_then(|v| {
-                    v.get("message")
-                        .and_then(|m| m.as_str())
-                        .map(|s| s.to_string())
-                });
-            return Err(Error::Api {
-                status: status.as_u16(),
-                message,
-                body: text,
-            });
+        let mut last_error: Option<Error> = None;
+        for attempt in 0..std::cmp::max(1, total_hosts) {
+            let idx = (start + attempt) % std::cmp::max(1, total_hosts);
+            let base = self
+                .hosts
+                .get(idx)
+                .cloned()
+                .unwrap_or_else(|| self.base_url.clone());
+            let url = format!("{base}{RECOMMEND_PATH}");
+
+            let req = self.http.post(&url).headers(self.headers()).json(body);
+
+            match req.send().await {
+                Ok(res) => {
+                    let status = res.status();
+                    let text = res.text().await?;
+                    if status.is_success() {
+                        let parsed = serde_json::from_str::<R>(&text)?;
+                        return Ok(parsed);
+                    }
+
+                    // Retry on 5xx and 429 by moving to next host
+                    if status.is_server_error() || status == StatusCode::TOO_MANY_REQUESTS {
+                        last_error = Some(Error::Api {
+                            status: status.as_u16(),
+                            message: serde_json::from_str::<serde_json::Value>(&text)
+                                .ok()
+                                .and_then(|v| {
+                                    v.get("message")
+                                        .and_then(|m| m.as_str())
+                                        .map(|s| s.to_string())
+                                }),
+                            body: text,
+                        });
+                        continue;
+                    } else {
+                        return Err(Error::Api {
+                            status: status.as_u16(),
+                            message: serde_json::from_str::<serde_json::Value>(&text)
+                                .ok()
+                                .and_then(|v| {
+                                    v.get("message")
+                                        .and_then(|m| m.as_str())
+                                        .map(|s| s.to_string())
+                                }),
+                            body: text,
+                        });
+                    }
+                }
+                Err(e) => {
+                    // Retry on network/connect/timeout errors
+                    if e.is_connect() || e.is_timeout() || e.is_request() {
+                        last_error = Some(Error::Http(e));
+                        continue;
+                    } else {
+                        return Err(Error::Http(e));
+                    }
+                }
+            }
         }
-        let parsed = serde_json::from_str::<R>(&text)?;
-        Ok(parsed)
+
+        Err(last_error.unwrap_or_else(|| Error::Api {
+            status: 0,
+            message: Some("all hosts failed".to_string()),
+            body: String::new(),
+        }))
     }
 
     // Public API
@@ -194,4 +269,16 @@ impl RecommendClient {
         };
         self.post_json::<_, TrendingFacetsResponse>(&body).await
     }
+}
+
+fn get_default_hosts(app_id: &str) -> Vec<String> {
+    // https://github.com/algolia/algoliasearch-client-javascript/blob/main/packages/recommend/src/recommendClient.ts
+    // https://github.com/algolia/algoliasearch-client-javascript/blob/main/packages/client-common/src/transporter/createTransporter.ts
+    vec![
+        format!("https://{app_id}-dsn.algolia.net"),
+        format!("https://{app_id}.algolia.net"),
+        format!("https://{app_id}-1.algolianet.com"),
+        format!("https://{app_id}-2.algolianet.com"),
+        format!("https://{app_id}-3.algolianet.com"),
+    ]
 }
