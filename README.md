@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for result in recs.results.iter() {
         for hit in result.hits.iter() {
-            println!("objectID={} score={:?}", hit.object_id, hit.score);
+            println!("objectID={} score={:?} payload={:?}", hit.object_id, hit.score, hit.payload);
         }
     }
 
@@ -88,7 +88,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## 🦀 Notes
 
 - The library is lenient in (de)serialization to stay forward-compatible with Algolia responses.
-- Provide `queryParameters` via `RecommendRequest.query_parameters` / `TrendingFacetsRequest.query_parameters` as raw JSON.
+- This is not an official API client, this is a personal project done to learn Rust.
+- This project is not covered by Algolia SLA
+- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED (see [LICENSE](LICENSE))
 
 ## 📜 License
 
