@@ -1,21 +1,31 @@
 # Algolia Recommend Rust Client
 
-Minimal async Rust client for the Algolia Recommend API (unofficial).
+<p align="center">
+  <!-- Stability -->
+  <a href="https://crates.io/crates/algolia-recommend-rs"><img alt="Stability: beta" src="https://img.shields.io/badge/stability-beta-f4d03f.svg" /></a>
+  <!-- Version -->
+  <a href="https://crates.io/crates/algolia-recommend-rs"><img alt="Crates.io" src="https://img.shields.io/crates/v/algolia-recommend-rs"></a>
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/algolia-recommend-rs"><img alt="Crates.io" src="https://img.shields.io/crates/d/algolia-recommend-rs"></a>
+  <!-- Tests -->
+  <a href="https://github.com/raed667/algolia-recommend-rs/actions/workflows/ci.yml"><img src="https://github.com/raed667/algolia-recommend-rs/actions/workflows/ci.yml/badge.svg" /></>
+  <!-- codecov <a href="https://codecov.io/gh/raed667/algolia-recommend-rs"><img src="https://codecov.io/gh/raed667/algolia-recommend-rs/branch/main/graph/badge.svg?token=6IH3LQRXNH"/></a> -->
+  <!-- Docs -->
+  <a href="https://docs.rs/algolia-recommend-rs"><img src="https://docs.rs/algolia-recommend-rs/badge.svg"/></a>
+  <!-- license -->
+  <a href="https://crates.io/crates/algolia-recommend-rs"><img alt="Crates.io" src="https://img.shields.io/crates/l/algolia-recommend-rs"></a>
+      
+  <p align="center">API reference: <a href="https://www.algolia.com/doc/rest-api/recommend/get-recommendations">Algolia Recommend API</a></p>
+</p>
 
-- get_recommendations<T>: fetches recommendations.
-- get_trending_facets: fetches trending facet values.
 
-See API reference: [Algolia Recommend API](https://www.algolia.com/doc/rest-api/recommend/get-recommendations).
+## 📦 Install
 
-## Installation
-
-Add to Cargo.toml:
-
-```toml
-algolia-recommend = "0.1"
+```sh
+$ cargo add algolia-recommend-rs
 ```
 
-## Usage
+## ⚡️ Quick start
 
 ```rust
 use algolia_recommend::{RecommendClient, RecommendRequest, TrendingFacetsRequest};
@@ -60,11 +70,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Notes
+## 🦀 Notes
 
 - The library is lenient in (de)serialization to stay forward-compatible with Algolia responses.
 - Provide `queryParameters` via `RecommendRequest.query_parameters` / `TrendingFacetsRequest.query_parameters` as raw JSON.
 
-## License
+## 📜 License
 
-MIT
+[MIT](LICENSE)
