@@ -14,10 +14,13 @@
   <a href="https://docs.rs/algolia-recommend-rs"><img src="https://docs.rs/algolia-recommend-rs/badge.svg"/></a>
   <!-- license -->
   <a href="https://crates.io/crates/algolia-recommend-rs"><img alt="Crates.io" src="https://img.shields.io/crates/l/algolia-recommend-rs"></a>
-      
-  <p align="center">API reference: <a href="https://www.algolia.com/doc/rest-api/recommend/get-recommendations">Algolia Recommend API</a></p>
 </p>
 
+<p align="center">
+    <b>algolia-recommend-rs</b> is an unofficial Rust Client for <a href="https://www.algolia.com/doc/rest-api/recommend/get-recommendations">Algolia Recommend</a>
+    <br>
+     <a href="https://docs.rs/algolia-recommend-rs/latest/algolia-recommend-rs/"><strong>docs.rs/algolia-recommend-rs</strong></a>
+</p>
 
 ## 📦 Install
 

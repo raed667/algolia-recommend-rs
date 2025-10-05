@@ -1,11 +1,17 @@
 [package]
-name = "algolia-recommend"
-version = "0.1.0"
+name = "algolia-recommend-rs"
+authors = ["Raed667"]
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
-description = "Minimal async Rust client for Algolia Recommend API"
-repository = "https://example.com/algolia-recommend"
+description = """
+Async Rust client for Algolia Recommend API (unofficial)
+"""
+repository = "https://github.com/raed667/algolia-recommend-rs"
+documentation = "https://docs.rs/algolia-recommend-rs"
+homepage = "https://github.com/raed667/algolia-recommend-rs"
 keywords = ["algolia", "recommend", "search", "client"]
+include = ["src/", "LICENSE", "README.md"]
 
 [dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
