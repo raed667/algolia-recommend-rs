@@ -29,16 +29,49 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
     let client = RecommendClient::with_base_url("APPID", "KEY", server.base_url())
         .with_default_object_id("obj-1");
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::BoughtTogether,
+            object_id: Some("obj-1".to_string()),
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::RelatedProducts,
+            object_id: Some("obj-1".to_string()),
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::TrendingItems,
+            object_id: None,
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::LookingSimilar,
+            object_id: Some("obj-1".to_string()),
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+    ];
+
     let resp = client
-        .get_recommendations::<Product>(
-            "products",
-            vec![
-                Model::BoughtTogether,
-                Model::RelatedProducts,
-                Model::TrendingItems,
-                Model::LookingSimilar,
-            ],
-        )
+        .get_recommendations::<Product>(requests)
         .await
         .expect("request ok");
 
@@ -95,8 +128,20 @@ async fn test_non_2xx_api_error_is_mapped() {
 
     let client = RecommendClient::with_base_url("APPID", "KEY", server.base_url());
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let err = client
-        .get_recommendations::<Product>("products", vec![Model::TrendingItems])
+        .get_recommendations::<Product>(requests)
         .await
         .expect_err("should error");
 
@@ -118,8 +163,20 @@ async fn test_malformed_json_yields_serde_error() {
 
     let client = RecommendClient::with_base_url("APPID", "KEY", server.base_url());
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let err = client
-        .get_recommendations::<Product>("products", vec![Model::TrendingItems])
+        .get_recommendations::<Product>(requests)
         .await
         .expect_err("should error");
 
@@ -155,8 +212,20 @@ async fn test_retry_on_5xx_then_succeed_on_next_host() {
     let hosts = vec![primary.base_url(), fallback.base_url()];
     let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let resp = client
-        .get_recommendations::<Product>("products", vec![Model::TrendingItems])
+        .get_recommendations::<Product>(requests)
         .await
         .expect("request ok after retry");
 
@@ -185,8 +254,20 @@ async fn test_retry_on_network_error_then_succeed() {
     let hosts = vec![bad_host, ok_server.base_url()];
     let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let resp = client
-        .get_recommendations::<Product>("products", vec![Model::TrendingItems])
+        .get_recommendations::<Product>(requests)
         .await
         .expect("request ok after network retry");
 
@@ -219,8 +300,20 @@ async fn test_non_retryable_4xx_does_not_try_next_host() {
     let hosts = vec![first.base_url(), second.base_url()];
     let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
 
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let err = client
-        .get_recommendations::<Product>("products", vec![Model::TrendingItems])
+        .get_recommendations::<Product>(requests)
         .await
         .expect_err("should fail with 400 and not retry");
 

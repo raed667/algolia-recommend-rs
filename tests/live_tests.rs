@@ -15,8 +15,20 @@ async fn live_smoke_get_recommendations() {
     let client = RecommendClient::new(app_id, api_key).with_default_object_id("test-record-123");
 
     // Minimal request; index and object may not exist; we only assert no transport/serde crash
+    use algolia_recommend_rs::models::RecommendRequest;
+
+    let requests = vec![RecommendRequest {
+        index_name: "products".to_string(),
+        model: Model::TrendingItems,
+        object_id: None,
+        threshold: Some(0),
+        max_recommendations: None,
+        facet_name: None,
+        query_parameters: None,
+    }];
+
     let result = client
-        .get_recommendations::<serde_json::Value>("products", vec![Model::TrendingItems])
+        .get_recommendations::<serde_json::Value>(requests)
         .await;
 
     match result {

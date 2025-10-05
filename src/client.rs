@@ -190,52 +190,8 @@ impl RecommendClient {
     // Public API
     pub async fn get_recommendations<T: serde::de::DeserializeOwned + Send + 'static>(
         &self,
-        index_name: impl Into<String>,
-        models: Vec<Model>,
+        requests: Vec<RecommendRequest>,
     ) -> Result<RecommendResponse<T>> {
-        let index_name = index_name.into();
-        // Build requests internally; forbid trending-facets here
-        let mut requests: Vec<RecommendRequest> = Vec::with_capacity(models.len());
-        for model in models {
-            match model {
-                Model::TrendingFacets => {
-                    return Err(Error::Api {
-                        status: StatusCode::BAD_REQUEST.as_u16(),
-                        message: Some(
-                            "trending-facets must be requested via get_trending_facets".to_string(),
-                        ),
-                        body: String::new(),
-                    });
-                }
-                Model::TrendingItems => {
-                    requests.push(RecommendRequest {
-                        index_name: index_name.clone(),
-                        model,
-                        object_id: None,
-                        threshold: None,
-                        max_recommendations: None,
-                        facet_name: None,
-                        query_parameters: None,
-                    });
-                }
-                Model::BoughtTogether | Model::RelatedProducts | Model::LookingSimilar => {
-                    let oid = self.default_object_id.as_ref().ok_or_else(|| Error::Api {
-                        status: StatusCode::BAD_REQUEST.as_u16(),
-                        message: Some("default objectID not set; call with_default_object_id or set_default_object_id".to_string()),
-                        body: String::new(),
-                    })?;
-                    requests.push(RecommendRequest {
-                        index_name: index_name.clone(),
-                        model,
-                        object_id: Some(oid.clone()),
-                        threshold: None,
-                        max_recommendations: None,
-                        facet_name: None,
-                        query_parameters: None,
-                    });
-                }
-            }
-        }
         #[derive(Serialize)]
         struct Body<'a> {
             requests: &'a [RecommendRequest],

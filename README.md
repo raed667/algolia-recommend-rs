@@ -31,7 +31,7 @@ $ cargo add algolia-recommend-rs
 ## ⚡️ Quick start
 
 ```rust
-use algolia_recommend::{RecommendClient, RecommendRequest, TrendingFacetsRequest};
+use algolia_recommend_rs::{RecommendClient, models::{RecommendRequest, Model, TrendingFacetsRequest}};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -43,18 +43,30 @@ struct Product {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = RecommendClient::new("ALGOLIA_APPLICATION_ID", "ALGOLIA_API_KEY");
 
-    // Recommendations with typed hits
-    let recs = client
-        .get_recommendations::<Product>(
-            "products",
-            vec![
-                Model::BoughtTogether,
-                Model::RelatedProducts,
-                Model::TrendingItems,
-                Model::LookingSimilar,
-            ],
-        )
-        .await?;
+    // Build recommendation requests
+    let requests = vec![
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::BoughtTogether,
+            object_id: Some("example-object-id".to_string()),
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+        RecommendRequest {
+            index_name: "products".to_string(),
+            model: Model::TrendingItems,
+            object_id: None,
+            threshold: Some(0),
+            max_recommendations: None,
+            facet_name: None,
+            query_parameters: None,
+        },
+    ];
+
+    // Fetch recommendations
+    let recs = client.get_recommendations::<Product>(requests).await?;
     println!("results: {}", recs.results.len());
 
     for result in recs.results.iter() {
@@ -63,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // 2) Trending facets
+    // Fetch trending facets
     let trending = client
         .get_trending_facets(vec![TrendingFacetsRequest::new("products", "category")])
         .await?;
