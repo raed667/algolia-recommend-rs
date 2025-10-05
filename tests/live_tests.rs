@@ -1,5 +1,5 @@
-use algolia_recommend::models::Model;
-use algolia_recommend::{RecommendClient, TrendingFacetsRequest};
+use algolia_recommend_rs::models::Model;
+use algolia_recommend_rs::{RecommendClient, TrendingFacetsRequest};
 
 #[tokio::test]
 #[ignore]
