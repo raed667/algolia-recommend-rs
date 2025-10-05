@@ -44,7 +44,6 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || (secrets.ALGOLIA_APP_ID != '' && secrets.ALGOLIA_API_KEY != '') }}
     env:
       APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
       API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
