@@ -1,4 +1,4 @@
-# algolia-recommend (Rust)
+# Algolia Recommend Rust Client
 
 Minimal async Rust client for the Algolia Recommend API (unofficial).
 
