@@ -20,7 +20,6 @@ pub struct RecommendClient {
     base_url: String,
     hosts: Vec<String>,
     host_cursor: Arc<AtomicUsize>,
-    default_object_id: Option<String>,
 }
 
 impl RecommendClient {
@@ -58,7 +57,6 @@ impl RecommendClient {
             base_url: base.clone(),
             hosts: vec![base],
             host_cursor: Arc::new(AtomicUsize::new(0)),
-            default_object_id: None,
         }
     }
 
@@ -82,17 +80,7 @@ impl RecommendClient {
             base_url,
             hosts,
             host_cursor: Arc::new(AtomicUsize::new(0)),
-            default_object_id: None,
         }
-    }
-
-    pub fn with_default_object_id(mut self, object_id: impl Into<String>) -> Self {
-        self.default_object_id = Some(object_id.into());
-        self
-    }
-
-    pub fn set_default_object_id(&mut self, object_id: impl Into<String>) {
-        self.default_object_id = Some(object_id.into());
     }
 
     fn headers(&self) -> HeaderMap {

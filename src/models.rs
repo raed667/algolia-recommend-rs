@@ -22,8 +22,8 @@ pub struct RecommendRequest {
     #[serde(rename = "objectID")]
     pub object_id: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub threshold: Option<i32>,
+    #[serde()]
+    pub threshold: i32,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "maxRecommendations")]
@@ -46,7 +46,7 @@ impl RecommendRequest {
             index_name: index_name.into(),
             model: Model::BoughtTogether,
             object_id: Some(object_id.into()),
-            threshold: None,
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -58,7 +58,7 @@ impl RecommendRequest {
             index_name: index_name.into(),
             model: Model::RelatedProducts,
             object_id: Some(object_id.into()),
-            threshold: None,
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -70,7 +70,7 @@ impl RecommendRequest {
             index_name: index_name.into(),
             model: Model::TrendingItems,
             object_id: None,
-            threshold: None,
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -82,7 +82,7 @@ impl RecommendRequest {
             index_name: index_name.into(),
             model: Model::LookingSimilar,
             object_id: Some(object_id.into()),
-            threshold: None,
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -98,8 +98,8 @@ pub struct TrendingFacetsRequest {
     #[serde(rename = "facetName")]
     pub facet_name: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub threshold: Option<i32>,
+    #[serde()]
+    pub threshold: i32,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "maxRecommendations")]
@@ -116,7 +116,7 @@ impl TrendingFacetsRequest {
             model: Model::TrendingFacets,
             index_name: index_name.into(),
             facet_name: facet_name.into(),
-            threshold: None,
+            threshold: 0,
             max_recommendations: None,
             query_parameters: None,
         }

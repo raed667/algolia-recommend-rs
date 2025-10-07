@@ -1,6 +1,7 @@
 use algolia_recommend_rs::models::Model;
 use algolia_recommend_rs::{RecommendClient, TrendingFacetsRequest};
 use httpmock::prelude::*;
+use pretty_assertions::assert_eq;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -26,8 +27,7 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
             );
     });
 
-    let client = RecommendClient::with_base_url("APPID", "KEY", server.base_url())
-        .with_default_object_id("obj-1");
+    let client = RecommendClient::with_base_url("APPID", "KEY", server.base_url());
 
     use algolia_recommend_rs::models::RecommendRequest;
 
@@ -36,7 +36,7 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
             index_name: "products".to_string(),
             model: Model::BoughtTogether,
             object_id: Some("obj-1".to_string()),
-            threshold: Some(0),
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -45,7 +45,7 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
             index_name: "products".to_string(),
             model: Model::RelatedProducts,
             object_id: Some("obj-1".to_string()),
-            threshold: Some(0),
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -54,7 +54,7 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
             index_name: "products".to_string(),
             model: Model::TrendingItems,
             object_id: None,
-            threshold: Some(0),
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -63,7 +63,7 @@ async fn test_get_recommendations_excludes_trending_facets_and_parses_hits() {
             index_name: "products".to_string(),
             model: Model::LookingSimilar,
             object_id: Some("obj-1".to_string()),
-            threshold: Some(0),
+            threshold: 0,
             max_recommendations: None,
             facet_name: None,
             query_parameters: None,
@@ -134,7 +134,7 @@ async fn test_non_2xx_api_error_is_mapped() {
         index_name: "products".to_string(),
         model: Model::TrendingItems,
         object_id: None,
-        threshold: Some(0),
+        threshold: 0,
         max_recommendations: None,
         facet_name: None,
         query_parameters: None,
@@ -169,7 +169,7 @@ async fn test_malformed_json_yields_serde_error() {
         index_name: "products".to_string(),
         model: Model::TrendingItems,
         object_id: None,
-        threshold: Some(0),
+        threshold: 0,
         max_recommendations: None,
         facet_name: None,
         query_parameters: None,
@@ -210,7 +210,7 @@ async fn test_retry_on_5xx_then_succeed_on_next_host() {
     });
 
     let hosts = vec![primary.base_url(), fallback.base_url()];
-    let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
+    let client = RecommendClient::with_hosts("APPID", "KEY", hosts);
 
     use algolia_recommend_rs::models::RecommendRequest;
 
@@ -218,7 +218,7 @@ async fn test_retry_on_5xx_then_succeed_on_next_host() {
         index_name: "products".to_string(),
         model: Model::TrendingItems,
         object_id: None,
-        threshold: Some(0),
+        threshold: 0,
         max_recommendations: None,
         facet_name: None,
         query_parameters: None,
@@ -252,7 +252,7 @@ async fn test_retry_on_network_error_then_succeed() {
     });
 
     let hosts = vec![bad_host, ok_server.base_url()];
-    let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
+    let client = RecommendClient::with_hosts("APPID", "KEY", hosts);
 
     use algolia_recommend_rs::models::RecommendRequest;
 
@@ -260,7 +260,7 @@ async fn test_retry_on_network_error_then_succeed() {
         index_name: "products".to_string(),
         model: Model::TrendingItems,
         object_id: None,
-        threshold: Some(0),
+        threshold: 0,
         max_recommendations: None,
         facet_name: None,
         query_parameters: None,
@@ -298,7 +298,7 @@ async fn test_non_retryable_4xx_does_not_try_next_host() {
     });
 
     let hosts = vec![first.base_url(), second.base_url()];
-    let client = RecommendClient::with_hosts("APPID", "KEY", hosts).with_default_object_id("obj-1");
+    let client = RecommendClient::with_hosts("APPID", "KEY", hosts);
 
     use algolia_recommend_rs::models::RecommendRequest;
 
@@ -306,7 +306,7 @@ async fn test_non_retryable_4xx_does_not_try_next_host() {
         index_name: "products".to_string(),
         model: Model::TrendingItems,
         object_id: None,
-        threshold: Some(0),
+        threshold: 0,
         max_recommendations: None,
         facet_name: None,
         query_parameters: None,
@@ -322,6 +322,6 @@ async fn test_non_retryable_4xx_does_not_try_next_host() {
     assert!(msg.contains("400"));
 
     // Ensure second host was not called
-    assert_eq!(m1.hits(), 1);
-    assert_eq!(m2.hits(), 0);
+    assert_eq!(m1.calls(), 1);
+    assert_eq!(m2.calls(), 0);
 }
